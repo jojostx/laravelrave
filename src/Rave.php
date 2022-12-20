@@ -2,7 +2,6 @@
 
 namespace KingFlamez\Rave;
 
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use KingFlamez\Rave\Helpers\Banks;
 use KingFlamez\Rave\Helpers\Beneficiary;
@@ -18,17 +17,14 @@ use KingFlamez\Rave\Helpers\Subaccount;
  **/
 class Rave
 {
-
     protected $publicKey;
     protected $secretKey;
+    protected $secretHash;
+    protected $encryptionKey;
     protected $baseUrl;
 
-    /**
-     * Construct
-     */
     function __construct()
     {
-
         $this->publicKey = config('flutterwave.publicKey');
         $this->secretKey = config('flutterwave.secretKey');
         $this->secretHash = config('flutterwave.secretHash');
@@ -36,13 +32,26 @@ class Rave
         $this->baseUrl = 'https://api.flutterwave.com/v3';
     }
 
+    public static function initialize(string $publicKey, string $secretKey)
+    {
+        $rave = new static;
+        $rave->secretKey = $secretKey;
+        $rave->publicKey = $publicKey;
+
+        return $rave;
+    }
+
+    public function setKeys(string $publicKey, string $secretKey)
+    {
+        $this->secretKey = $secretKey;
+        $this->publicKey = $publicKey;
+
+        return $this;
+    }
 
     /**
      * Generates a unique reference
-     * @param $transactionPrefix
-     * @return string
      */
-
     public function generateReference(String $transactionPrefix = NULL)
     {
         if ($transactionPrefix) {
@@ -53,20 +62,86 @@ class Rave
 
     /**
      * Reaches out to Flutterwave to initialize a payment
-     * @param $data
-     * @return object
      */
     public function initializePayment(array $data)
     {
-
-        $payment = Http::withToken($this->secretKey)->post(
-            $this->baseUrl . '/payments',
-            $data
-        )->json();
+        $payment = Http::withToken($this->secretKey)
+            ->post(
+                $this->baseUrl . '/payments',
+                $data
+            )->json();
 
         return $payment;
     }
 
+    /**
+     * Reaches out to Flutterwave to initialize a tokenized charge
+     */
+    public function initializeTokenizedCharge(array $data)
+    {
+        $payment = Http::withToken($this->secretKey)
+            ->post(
+                $this->baseUrl . '/tokenized-charges',
+                $data
+            )->json();
+
+        return $payment;
+    }
+
+    /**
+     * Reaches out to Flutterwave to initialize a tokenized charge
+
+     */
+    public function initializeBulkTokenizedCharge(array $data)
+    {
+        $payment = Http::withToken($this->secretKey)
+            ->post(
+                $this->baseUrl . '/bulk-tokenized-charges',
+                $data
+            )->json();
+
+        return $payment;
+    }
+
+    /**
+     * Reaches out to Flutterwave to get the collection of charges within
+     * a bulk tokenized charge.
+     */
+    public function getBulkTokenizedCharges(string $id)
+    {
+        $data =  Http::withToken($this->secretKey)
+            ->get($this->baseUrl . "/bulk-tokenized-charges/" . $id . '/transactions')
+            ->json();
+
+        return $data;
+    }
+
+    /**
+     * Reaches out to Flutterwave to query the status of a bulk tokenized charge.
+     */
+    public function getBulkTokenizedChargeStatus(string $id)
+    {
+        $data = Http::withToken($this->secretKey)
+            ->get($this->baseUrl . "/bulk-tokenized-charges/" . $id)
+            ->json();
+
+        return $data;
+    }
+
+    /**
+     * Reaches out to Flutterwave to update the detail of a token.
+     */
+    public function updateTokenDetails(string $token, array $data)
+    {
+        $data =  Http::withToken($this->secretKey)
+            ->put(
+                $this->baseUrl . "/tokens/" . $token,
+                $data
+            )
+            ->json();
+
+        return $data;
+    }
 
     /**
      * Gets a transaction ID depending on the redirect structure
@@ -90,23 +165,24 @@ class Rave
      */
     public function validateCharge(array $data)
     {
-
-        $payment = Http::withToken($this->secretKey)->post(
-            $this->baseUrl . '/validate-charge',
-            $data
-        )->json();
+        $payment = Http::withToken($this->secretKey)
+            ->post(
+                $this->baseUrl . '/validate-charge',
+                $data
+            )->json();
 
         return $payment;
     }
 
     /**
      * Reaches out to Flutterwave to verify a transaction
-     * @param $id
-     * @return object
      */
-    public function verifyTransaction($id)
+    public function verifyTransaction(string $id)
     {
-        $data =  Http::withToken($this->secretKey)->get($this->baseUrl . "/transactions/" . $id . '/verify')->json();
+        $data =  Http::withToken($this->secretKey)
+            ->get($this->baseUrl . "/transactions/" . $id . '/verify')
+            ->json();
+
         return $data;
     }
 
@@ -117,7 +193,7 @@ class Rave
      */
     public function verifyWebhook()
     {
-        // Process Paystack Webhook. https://developer.flutterwave.com/reference#webhook
+        // Process flutterwave Webhook. https://developer.flutterwave.com/reference#webhook
         if (request()->header('verif-hash')) {
             // get input and verify paystack signature
             $flutterwaveSignature = request()->header('verif-hash');
@@ -170,7 +246,7 @@ class Rave
         return $beneficiary;
     }
 
-      /**
+    /**
      * Verification
      * @return Verification
      */
@@ -189,5 +265,4 @@ class Rave
         $subaccount = new Subaccount($this->publicKey, $this->secretKey, $this->baseUrl);
         return $subaccount;
     }
-
 }

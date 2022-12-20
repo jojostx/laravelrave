@@ -4,9 +4,8 @@ namespace Tests;
 
 use Mockery;
 use Orchestra\Testbench\TestCase as BaseTestCase;
-use phpDocumentor\Reflection\Types\Void_;
 
-abstract class TestCase extends BaseTestCase {
+class TestCase extends BaseTestCase {
 
     public $m;
 

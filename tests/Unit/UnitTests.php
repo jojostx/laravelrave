@@ -2,12 +2,10 @@
 
 namespace Tests\Unit;
 
-use Carbon\Carbon;
 use Tests\TestCase;
 use ReflectionClass;
 use ReflectionProperty;
 use KingFlamez\Rave\Rave;
-use Tests\Stubs\PaymentEventHandler;
 use Tests\Concerns\ExtractProperties;
 
 class UnitTests extends TestCase
@@ -81,7 +79,7 @@ class UnitTests extends TestCase
 
         $prefix = 'flw';
 
-        $this->assertRegExp("/^{$prefix}_\w{13}$/", $ref);
+        $this->assertMatchesRegularExpression("/^{$prefix}_\w{13}$/", $ref);
     }
 
     /**
@@ -95,7 +93,6 @@ class UnitTests extends TestCase
      */
     function settingKeys(Rave $rave)
     {
-
         $newPublicKey = "public_key";
         $newSecretKey = "secret_key";
         $rave->setKeys($newPublicKey, $newSecretKey);

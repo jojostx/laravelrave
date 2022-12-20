@@ -3,7 +3,6 @@
 namespace Tests\Unit;
 
 use Tests\TestCase;
-use KingFlamez\Rave\Rave;
 
 class RaveServiceProviderTests extends TestCase
 {

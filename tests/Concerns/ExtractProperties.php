@@ -3,7 +3,6 @@
 namespace Tests\Concerns;
 
 use ReflectionClass;
-use ReflectionProperty;
 
 trait ExtractProperties {
 
